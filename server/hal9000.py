@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import requests
+import traceback
 from dotenv import load_dotenv
 
 app = Flask(__name__)
@@ -65,8 +66,10 @@ def ask():
         conversations[user_id].append({"role": "assistant", "content": ai_reply})
 
         return jsonify({"response": ai_reply})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"Error calling Groq API: {e}")
+        traceback.print_exc()
+        return jsonify({"error": "Failed to get response from AI"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

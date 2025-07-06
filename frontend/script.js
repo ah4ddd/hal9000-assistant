@@ -1,49 +1,52 @@
-const sendBtn = document.getElementById('sendBtn');
-const userInput = document.getElementById('userInput');
-const messages = document.getElementById('messages');
-const userId = "ahad";
+const chatWindow = document.getElementById("chat");
+const userInput = document.getElementById("userInput");
+const sendButton = document.getElementById("sendButton");
 
-function addMessage(sender, text) {
-  const msg = document.createElement('div');
-  msg.className = 'message ' + sender;
-  msg.innerText = `${sender === 'user' ? 'You' : 'HAL 9000'}: ${text}`;
-  messages.appendChild(msg);
-  messages.scrollTop = messages.scrollHeight;
-}
+let conversation = [];
 
-async function sendMessage() {
-  const text = userInput.value.trim();
-  if (!text) return;
-
-  addMessage('user', text);
-  userInput.value = '';
-
-  try {
-    const res = await fetch('http://127.0.0.1:5000/api/ask', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ user_id: userId, message: text })
-    });
-
-    const data = await res.json();
-    if (data.response) {
-      addMessage('hal', data.response);
-      speakText(data.response);
-    } else {
-      addMessage('hal', "Error: Could not process your request.");
-    }
-  } catch (err) {
-    addMessage('hal', "Error: Could not reach server.");
+sendButton.addEventListener("click", () => {
+  userInput.addEventListener("keypress", (event) => {
+  if (event.key === "Enter") {
+    sendButton.click();
   }
-}
-
-sendBtn.addEventListener('click', sendMessage);
-userInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendMessage();
+});
+  const userMessage = userInput.value.trim();
+  if (userMessage === "") return;
+  userInput.value = "";
+  addMessage("You", userMessage);
+  fetchResponse(userMessage);
 });
 
-function speakText(text) {
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.voice = speechSynthesis.getVoices().find(voice => voice.lang.startsWith('en'));
-  speechSynthesis.speak(utterance);
+function addMessage(sender, message) {
+  conversation.push({ sender, message });
+  renderChat();
+}
+
+function renderChat() {
+  chatWindow.innerHTML = "";
+  conversation.forEach(entry => {
+    chatWindow.innerHTML += `<p><strong>${entry.sender}:</strong> ${entry.message}</p>`;
+  });
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function fetchResponse(userMessage) {
+  fetch("http://127.0.0.1:5000/api/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: userMessage })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.response) {
+      addMessage("HAL 9000", data.response);
+    } else if (data.error) {
+      addMessage("HAL 9000", "Error: " + data.error);
+    } else {
+      addMessage("HAL 9000", "Unknown error.");
+    }
+  })
+  .catch(() => {
+    addMessage("HAL 9000", "Error: Could not reach server.");
+  });
 }

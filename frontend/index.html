@@ -3,18 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <title>HAL 9000 Assistant</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background-color: black;
+      color: #00ffcc;
+      font-family: Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+    }
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      border-bottom: 1px solid #00ffcc;
+    }
+    .message {
+      margin: 5px 0;
+    }
+    .user {
+      color: #ff3366;
+    }
+    .bot {
+      color: #00ffcc;
+    }
+    #input-container {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #00ffcc;
+    }
+    #input {
+      flex: 1;
+      background: black;
+      color: #00ffcc;
+      border: 1px solid #00ffcc;
+      padding: 5px;
+    }
+    #send {
+      background: #00ffcc;
+      color: black;
+      border: none;
+      padding: 5px 10px;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>HAL 9000</h1>
-    <div id="chat">
-      <div id="messages"></div>
-    </div>
-    <input type="text" id="userInput" placeholder="Speak to HAL..." autofocus />
-    <button id="sendBtn">Send</button>
+  <h2 style="text-align: center;">HAL 9000 Assistant</h2>
+  <div id="chat"></div>
+  <div id="input-container">
+    <input type="text" id="input" placeholder="Type your message..." />
+    <button id="send">Send</button>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+
+    // Keep history in session
+    let conversation = [];
+
+    function appendMessage(speaker, text) {
+      const msg = document.createElement('div');
+      msg.classList.add('message');
+      msg.classList.add(speaker === 'You' ? 'user' : 'bot');
+      msg.textContent = `${speaker}: ${text}`;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 0.9;
+      utterance.volume = 1;
+      speechSynthesis.speak(utterance);
+    }
+
+    async function sendMessage() {
+      const userMessage = input.value.trim();
+      if (!userMessage) return;
+
+      appendMessage('You', userMessage);
+      conversation.push({ role: 'user', content: userMessage });
+      input.value = '';
+
+      try {
+        const res = await fetch('http://127.0.0.1:5000/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMessage, user_id: "browser-user" })
+        });
+        const data = await res.json();
+
+        if (data.response) {
+          appendMessage('HAL 9000', data.response);
+          speak(data.response);
+          conversation.push({ role: 'assistant', content: data.response });
+        } else {
+          appendMessage('HAL 9000', 'Error: No response from server');
+        }
+      } catch (e) {
+        appendMessage('HAL 9000', 'Error: Could not reach server');
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
 </body>
 </html>
