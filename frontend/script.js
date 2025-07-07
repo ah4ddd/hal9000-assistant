@@ -3,6 +3,8 @@ const userInput = document.getElementById("userInput");
 const sendButton = document.getElementById("sendButton");
 
 let conversation = [];
+console.log("Loaded JS version 2");
+
 
 sendButton.addEventListener("click", () => {
   userInput.addEventListener("keypress", (event) => {
@@ -31,7 +33,7 @@ function renderChat() {
 }
 
 function fetchResponse(userMessage) {
-  fetch("http://127.0.0.1:5000/api/ask", {
+fetch("/api/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message: userMessage })

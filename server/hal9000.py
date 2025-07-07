@@ -5,8 +5,11 @@ import requests
 import traceback
 from dotenv import load_dotenv
 
+# ✅ ADD THIS
+from flask import send_from_directory
+
 app = Flask(__name__)
-CORS(app)  # ALLOW FRONTEND TO CALL THIS SERVER
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 load_dotenv()
 
@@ -31,6 +34,7 @@ def ask():
     data = request.get_json()
     user_id = data.get("user_id", "default")
     user_message = data.get("message", "")
+    print("REQUEST RECEIVED from:", request.remote_addr)
 
     if not user_message:
         return jsonify({"error": "No message sent"}), 400
@@ -71,5 +75,20 @@ def ask():
         traceback.print_exc()
         return jsonify({"error": "Failed to get response from AI"}), 500
 
+# ✅ ADD THIS NEW ROUTE
+@app.route("/", methods=["GET"])
+def serve_index():
+    return send_from_directory("../frontend", "index.html")
+
+# ✅ ADD THIS TO SERVE STATIC FILES
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory("../frontend", path)
+
+@app.after_request
+def add_header(r):
+    r.headers["Cache-Control"] = "no-store"
+    return r
+
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+ app.run(host="0.0.0.0", port=5000, debug=False)
