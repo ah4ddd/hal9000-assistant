@@ -78,12 +78,12 @@ def ask():
 # ✅ ADD THIS NEW ROUTE
 @app.route("/", methods=["GET"])
 def serve_index():
-    return send_from_directory("../frontend", "index.html")
+    return send_from_directory(os.path.join(os.getcwd(), "frontend"), "index.html")
 
-# ✅ ADD THIS TO SERVE STATIC FILES
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory("../frontend", path)
+    return send_from_directory(os.path.join(os.getcwd(), "frontend"), path)
+
 
 @app.after_request
 def add_header(r):
