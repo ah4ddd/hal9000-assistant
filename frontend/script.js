@@ -1,35 +1,32 @@
-
 const chat = document.getElementById('chat');
 const input = document.getElementById('input');
 const sendBtn = document.getElementById('send');
 const voiceSelect = document.getElementById('voiceSelect');
 
-let conversation = [];
-let allVoices = [];
-let chosenVoiceName = localStorage.getItem('halVoice') || '';
+let voices = [];
+let selectedVoiceName = localStorage.getItem('halSelectedVoice') || '';
 
-function loadVoices() {
-  allVoices = window.speechSynthesis.getVoices();
+function populateVoiceList() {
+  voices = speechSynthesis.getVoices();
   voiceSelect.innerHTML = '';
-
-  allVoices.forEach((voice) => {
+  voices.forEach((voice) => {
     const option = document.createElement('option');
     option.value = voice.name;
     option.textContent = `${voice.name} (${voice.lang})`;
-    if (voice.name === chosenVoiceName) {
+    if (voice.name === selectedVoiceName) {
       option.selected = true;
     }
     voiceSelect.appendChild(option);
   });
 }
 
-voiceSelect.addEventListener('change', () => {
-  chosenVoiceName = voiceSelect.value;
-  localStorage.setItem('halVoice', chosenVoiceName);
-});
+populateVoiceList();
+speechSynthesis.onvoiceschanged = populateVoiceList;
 
-window.speechSynthesis.onvoiceschanged = loadVoices;
-loadVoices();
+voiceSelect.addEventListener('change', () => {
+  selectedVoiceName = voiceSelect.value;
+  localStorage.setItem('halSelectedVoice', selectedVoiceName);
+});
 
 function appendMessage(speaker, text) {
   const msg = document.createElement('div');
@@ -42,15 +39,15 @@ function appendMessage(speaker, text) {
 
 function speak(text) {
   const utterance = new SpeechSynthesisUtterance(text);
-
-  const selected = allVoices.find(v => v.name === chosenVoiceName);
-  if (selected) {
-    utterance.voice = selected;
-  }
-
   utterance.rate = 0.95;
   utterance.pitch = 0.9;
   utterance.volume = 1;
+
+  const chosenVoice = voices.find(v => v.name === selectedVoiceName);
+  if (chosenVoice) {
+    utterance.voice = chosenVoice;
+  }
+
   speechSynthesis.speak(utterance);
 }
 
@@ -59,7 +56,6 @@ async function sendMessage() {
   if (!userMessage) return;
 
   appendMessage('You', userMessage);
-  conversation.push({ role: 'user', content: userMessage });
   input.value = '';
 
   try {
@@ -73,7 +69,6 @@ async function sendMessage() {
     if (data.response) {
       appendMessage('HAL 9000', data.response);
       speak(data.response);
-      conversation.push({ role: 'assistant', content: data.response });
     } else {
       appendMessage('HAL 9000', 'Error: No response from server');
     }
