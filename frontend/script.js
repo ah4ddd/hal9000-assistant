@@ -1,24 +1,32 @@
+
 const chat = document.getElementById('chat');
 const input = document.getElementById('input');
 const sendBtn = document.getElementById('send');
+const voiceSelect = document.getElementById('voiceSelect');
 
 let conversation = [];
-let halVoice = null;
+let allVoices = [];
+let chosenVoiceName = localStorage.getItem('halVoice') || '';
 
-// ✅ Load voices once they're available
 function loadVoices() {
-  const voices = window.speechSynthesis.getVoices();
+  allVoices = window.speechSynthesis.getVoices();
+  voiceSelect.innerHTML = '';
 
-  // Try to pick a HAL-like voice (male / English / robotic)
-  halVoice = voices.find(v =>
-    v.lang.toLowerCase().includes('en') &&
-    (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('robot'))
-  )
-  || voices.find(v => v.lang.toLowerCase().includes('en'))
-  || voices[0];
-
-  console.log("Chosen voice:", halVoice);
+  allVoices.forEach((voice) => {
+    const option = document.createElement('option');
+    option.value = voice.name;
+    option.textContent = `${voice.name} (${voice.lang})`;
+    if (voice.name === chosenVoiceName) {
+      option.selected = true;
+    }
+    voiceSelect.appendChild(option);
+  });
 }
+
+voiceSelect.addEventListener('change', () => {
+  chosenVoiceName = voiceSelect.value;
+  localStorage.setItem('halVoice', chosenVoiceName);
+});
 
 window.speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
@@ -34,9 +42,12 @@ function appendMessage(speaker, text) {
 
 function speak(text) {
   const utterance = new SpeechSynthesisUtterance(text);
-  if (halVoice) {
-    utterance.voice = halVoice;
+
+  const selected = allVoices.find(v => v.name === chosenVoiceName);
+  if (selected) {
+    utterance.voice = selected;
   }
+
   utterance.rate = 0.95;
   utterance.pitch = 0.9;
   utterance.volume = 1;
@@ -75,4 +86,3 @@ sendBtn.addEventListener('click', sendMessage);
 input.addEventListener('keydown', e => {
   if (e.key === 'Enter') sendMessage();
 });
-
