@@ -1,54 +1,60 @@
-const chatWindow = document.getElementById("chat");
-const userInput = document.getElementById("userInput");
-const sendButton = document.getElementById("sendButton");
+// Wait for the DOM to load before accessing elements
+document.addEventListener("DOMContentLoaded", () => {
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('send');
 
-let conversation = [];
-console.log("Loaded JS version 2");
+  let conversation = [];
 
-
-sendButton.addEventListener("click", () => {
-  userInput.addEventListener("keypress", (event) => {
-  if (event.key === "Enter") {
-    sendButton.click();
+  function appendMessage(speaker, text) {
+    const msg = document.createElement('div');
+    msg.classList.add('message');
+    msg.classList.add(speaker === 'You' ? 'user' : 'bot');
+    msg.textContent = `${speaker}: ${text}`;
+    chat.appendChild(msg);
+    chat.scrollTop = chat.scrollHeight;
   }
-});
-  const userMessage = userInput.value.trim();
-  if (userMessage === "") return;
-  userInput.value = "";
-  addMessage("You", userMessage);
-  fetchResponse(userMessage);
-});
 
-function addMessage(sender, message) {
-  conversation.push({ sender, message });
-  renderChat();
-}
+  function speak(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 0.9;
+    utterance.volume = 1;
+    speechSynthesis.speak(utterance);
+  }
 
-function renderChat() {
-  chatWindow.innerHTML = "";
-  conversation.forEach(entry => {
-    chatWindow.innerHTML += `<p><strong>${entry.sender}:</strong> ${entry.message}</p>`;
-  });
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-}
+  async function sendMessage() {
+    const userMessage = input.value.trim();
+    if (!userMessage) return;
 
-function fetchResponse(userMessage) {
-fetch("/api/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: userMessage })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.response) {
-      addMessage("HAL 9000", data.response);
-    } else if (data.error) {
-      addMessage("HAL 9000", "Error: " + data.error);
-    } else {
-      addMessage("HAL 9000", "Unknown error.");
+    appendMessage('You', userMessage);
+    conversation.push({ role: 'user', content: userMessage });
+    input.value = '';
+
+    try {
+      const res = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage, user_id: "browser-user" })
+      });
+      const data = await res.json();
+
+      if (data.response) {
+        appendMessage('HAL 9000', data.response);
+        speak(data.response);
+        conversation.push({ role: 'assistant', content: data.response });
+      } else if (data.error) {
+        appendMessage('HAL 9000', `Error: ${data.error}`);
+      } else {
+        appendMessage('HAL 9000', 'Unknown error.');
+      }
+    } catch (e) {
+      appendMessage('HAL 9000', 'Error: Could not reach server.');
     }
-  })
-  .catch(() => {
-    addMessage("HAL 9000", "Error: Could not reach server.");
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendMessage();
   });
-}
+});
