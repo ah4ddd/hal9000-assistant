@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 import requests
 import traceback
+import time
 from dotenv import load_dotenv
 
 # Create Flask app
@@ -31,7 +32,7 @@ You are HAL. You are an advanced AI assistant designed to help Ahad achieve his 
 # Memory: in-memory store
 conversations = {}
 
-# ✅ Absolute path to frontend folder (WORKS LOCALLY AND ON RENDER)
+# ✅ Absolute path to frontend folder
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
 print("Frontend directory resolved to:", FRONTEND_DIR)
 
@@ -64,21 +65,38 @@ def ask():
         "Content-Type": "application/json"
     }
 
-    try:
-        res = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        res.raise_for_status()
-        ai_reply = res.json()["choices"][0]["message"]["content"]
-        conversations[user_id].append({"role": "assistant", "content": ai_reply})
-        return jsonify({"response": ai_reply})
-    except requests.exceptions.RequestException as e:
-        print(f"Error calling Groq API: {e}")
-        traceback.print_exc()
-        return jsonify({"error": "Failed to get response from AI"}), 500
+    # --- Retry logic with 3 attempts ---
+    for attempt in range(3):
+        try:
+            print(f"Calling Groq API (attempt {attempt + 1})")
+            res = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=30
+            )
+            res.raise_for_status()
+            ai_reply = res.json()["choices"][0]["message"]["content"]
+            conversations[user_id].append({"role": "assistant", "content": ai_reply})
+            return jsonify({"response": ai_reply})
+        
+        except requests.exceptions.HTTPError as e:
+            if res.status_code == 503 and attempt < 2:
+                print("Groq returned 503, retrying in 2 seconds...")
+                time.sleep(2)
+                continue
+            print("HTTPError from Groq:", e)
+            traceback.print_exc()
+            return jsonify({"error": "HAL is currently unavailable. Please try again later."}), 503
+
+        except requests.exceptions.RequestException as e:
+            print("RequestException calling Groq:", e)
+            traceback.print_exc()
+            return jsonify({"error": "HAL encountered a network error."}), 503
+
+    # --- Fallback if all retries fail ---
+    return jsonify({"error": "HAL is currently offline. Try again later."}), 503
+
 
 # ✅ Serve index.html at /
 @app.route("/", methods=["GET"])
