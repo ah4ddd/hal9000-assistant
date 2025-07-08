@@ -1,20 +1,22 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 import requests
 import traceback
 from dotenv import load_dotenv
 
-# ✅ ADD THIS
-from flask import send_from_directory
-
+# Create Flask app
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+# Load .env
 load_dotenv()
 
+# Get env variables
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 MODEL_NAME = os.getenv("MODEL_NAME")
+
+# Define system prompt
 SYSTEM_PROMPT = """
 You are HAL. You are an advanced AI assistant designed to help Ahad achieve his goals.
 - Speak only to Ahad, refer to him by name. 
@@ -29,6 +31,11 @@ You are HAL. You are an advanced AI assistant designed to help Ahad achieve his 
 # Memory: in-memory store
 conversations = {}
 
+# ✅ Absolute path to frontend folder (WORKS LOCALLY AND ON RENDER)
+FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
+print("Frontend directory resolved to:", FRONTEND_DIR)
+
+# ✅ API endpoint
 @app.route("/api/ask", methods=["POST"])
 def ask():
     data = request.get_json()
@@ -49,7 +56,7 @@ def ask():
     payload = {
         "model": MODEL_NAME,
         "messages": conversations[user_id],
-        "temperature": 0.3
+        "temperature": 0.5
     }
 
     headers = {
@@ -66,29 +73,29 @@ def ask():
         )
         res.raise_for_status()
         ai_reply = res.json()["choices"][0]["message"]["content"]
-
         conversations[user_id].append({"role": "assistant", "content": ai_reply})
-
         return jsonify({"response": ai_reply})
     except requests.exceptions.RequestException as e:
         print(f"Error calling Groq API: {e}")
         traceback.print_exc()
         return jsonify({"error": "Failed to get response from AI"}), 500
 
-# ✅ ADD THIS NEW ROUTE
+# ✅ Serve index.html at /
 @app.route("/", methods=["GET"])
 def serve_index():
-    return send_from_directory(os.path.join(os.getcwd(), "frontend"), "index.html")
+    return send_from_directory(FRONTEND_DIR, "index.html")
 
-@app.route('/<path:path>')
+# ✅ Serve static files
+@app.route("/<path:path>")
 def serve_static(path):
-    return send_from_directory(os.path.join(os.getcwd(), "frontend"), path)
+    return send_from_directory(FRONTEND_DIR, path)
 
-
+# ✅ Disable caching
 @app.after_request
 def add_header(r):
     r.headers["Cache-Control"] = "no-store"
     return r
 
+# ✅ Run the server
 if __name__ == "__main__":
- app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=False)
