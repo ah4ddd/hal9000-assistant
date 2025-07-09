@@ -1,31 +1,132 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   background-color: black;
   color: #00ffcc;
-  font-family: monospace;
+  font-family: Courier, monospace;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: 0;
 }
 
-#container {
-  width: 600px;
-  margin: 40px auto;
-  background: #111;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px #00ffcc;
+h2 {
+  text-align: center;
+  margin: 10px 0;
+  font-size: 1.4rem;
+}
+
+#top-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  border-bottom: 1px solid #00ffcc;
+  flex-wrap: wrap;
+}
+
+#resetChat {
+  background: #00ffcc;
+  color: black;
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+#voice-select-container label {
+  margin-right: 5px;
+}
+
+#voice-select-container select {
+  background: black;
+  color: #00ffcc;
+  border: 1px solid #00ffcc;
+  font-size: 1rem;
+  padding: 4px 8px;
 }
 
 #chat {
-  height: 400px;
-  overflow-y: scroll;
-  background: #000;
+  flex: 1;
+  overflow-y: auto;
   padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #00ffcc;
+  border-bottom: 1px solid #00ffcc;
+  font-size: 1rem;
 }
 
-input, button {
+.message {
+  margin: 5px 0;
+  word-wrap: break-word;
+}
+
+.user {
+  color: #ff3366;
+}
+
+.bot {
+  color: #00ffcc;
+}
+
+#input-container {
+  display: flex;
   padding: 10px;
-  font-size: 16px;
-  background: #000;
+  border-top: 1px solid #00ffcc;
+  background: black;
+}
+
+#input {
+  flex: 1;
+  background: black;
   color: #00ffcc;
   border: 1px solid #00ffcc;
+  padding: 8px;
+  font-size: 1rem;
+}
+
+#send {
+  background: #00ffcc;
+  color: black;
+  border: none;
+  padding: 8px 12px;
+  margin-left: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* ✅ MOBILE RESPONSIVE FIXES */
+@media (max-width: 600px) {
+  h2 {
+    font-size: 1.1rem;
+  }
+
+  #top-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #chat {
+    font-size: 0.95rem;
+  }
+
+  #input {
+    font-size: 0.95rem;
+    padding: 6px;
+  }
+
+  #send {
+    padding: 6px 10px;
+    font-size: 0.95rem;
+  }
+
+  #resetChat {
+    font-size: 0.9rem;
+    padding: 5px 10px;
+  }
+
+  #voice-select-container select {
+    font-size: 0.95rem;
+  }
 }

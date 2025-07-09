@@ -81,3 +81,18 @@ sendBtn.addEventListener('click', sendMessage);
 input.addEventListener('keydown', e => {
   if (e.key === 'Enter') sendMessage();
 });
+
+document.getElementById('resetChat').addEventListener('click', async () => {
+  try {
+    await fetch('/api/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: 'browser-user' })
+    });
+    conversation = [];
+    chat.innerHTML = '';
+    appendMessage('HAL 9000', 'New chat started. How can I help you, Ahad?');
+  } catch (err) {
+    appendMessage('HAL 9000', 'Error: Could not reset chat');
+  }
+});

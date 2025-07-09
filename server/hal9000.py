@@ -36,7 +36,8 @@ conversations = {}
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
 print("Frontend directory resolved to:", FRONTEND_DIR)
 
-# ✅ API endpoint
+# ✅ API endpoint for asking HAL
+
 @app.route("/api/ask", methods=["POST"])
 def ask():
     data = request.get_json()
@@ -64,7 +65,6 @@ def ask():
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
     }
-
     # --- Retry logic with 3 attempts ---
     for attempt in range(3):
         try:
@@ -96,6 +96,16 @@ def ask():
 
     # --- Fallback if all retries fail ---
     return jsonify({"error": "HAL is currently offline. Try again later."}), 503
+
+
+# ✅ New endpoint to reset conversation
+@app.route("/api/reset", methods=["POST"])
+def reset():
+    data = request.get_json()
+    user_id = data.get("user_id", "default")
+    conversations.pop(user_id, None)
+    print(f"Conversation reset for user: {user_id}")
+    return jsonify({"status": "reset"})
 
 
 # ✅ Serve index.html at /
