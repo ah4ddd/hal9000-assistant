@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="hal-banner.png" alt="HAL 9000 Assistant Banner" width="100%" />
+</p>
+
 # HAL 9000 Assistant
 
 An unfiltered, strategic personal AI — built to **think**, not please.  
