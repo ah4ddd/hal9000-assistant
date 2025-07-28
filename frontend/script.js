@@ -36,13 +36,19 @@ function appendMessage(text, sender = 'bot') {
     chat.scrollTop = chat.scrollHeight;
 
     if (sender === 'bot') {
+        // Convert markdown-style bold (**) to <strong>
+        let formatted = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **bold** -> <strong>bold</strong>
+            .replace(/\n/g, '<br>'); // Line breaks
+
+        msg.innerHTML = '';
         let index = 0;
         const interval = setInterval(() => {
-            msg.textContent += text.charAt(index);
+            msg.innerHTML = formatted.slice(0, index + 1);
             index++;
-            if (index >= text.length) clearInterval(interval);
+            if (index >= formatted.length) clearInterval(interval);
             chat.scrollTop = chat.scrollHeight;
-        }, 30); // Adjust typing speed here
+        }, 10); // Adjust speed as you like
     } else {
         msg.textContent = text;
     }
