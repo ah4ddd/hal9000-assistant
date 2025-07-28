@@ -1,29 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HAL 9000 Assistant</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <h2>HAL 9000 Assistant</h2>
-  
-  <div id="top-controls">
-    <button id="resetChat">New Chat</button>
-    <div id="voice-select-container">
-      <label for="voiceSelect">Voice:</label>
-      <select id="voiceSelect"></select>
-    </div>
-  </div>
-  
-  <div id="chat"></div>
-  
-  <div id="input-container">
-    <input type="text" id="input" placeholder="Type your message..." />
-    <button id="send">Send</button>
-  </div>
 
-  <script src="script.js"></script>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAL_9000 // CORE CONSOLE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div id="core-frame">
+        <header class="hal-header">
+            <div class="hal-boot-sequence">
+                <pre class="boot-line">[ SYSTEM CORE ONLINE ]</pre>
+                <pre class="boot-line">[ HAL_9000 STATUS: CONSCIOUS ]</pre>
+                <pre class="boot-line">[ USER ID: AHAD | INPUT MODE ACTIVE ]</pre>
+            </div>
+
+            <div id="top-controls">
+                <div id="voice-select-container">
+                    <label for="voiceSelect">Voice:</label>
+                    <select id="voiceSelect"></select>
+                </div>
+                <button id="resetChat">New Chat</button>
+            </div>
+
+            <div class="hal-symbol">●</div>
+        </header>
+
+        <main id="chat-area"></main>
+
+        <form id="chat-input" autocomplete="off" onsubmit="sendMessage(event)">
+            <input type="text" id="input" placeholder="> Awaiting Command..." autocomplete="off" />
+            <button id="send" title="Execute">▶</button>
+        </form>
+    </div>
+
+    <script src="script.js"></script>
 </body>
+
 </html>
