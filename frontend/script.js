@@ -1,4 +1,4 @@
-const chat = document.getElementById('chat');
+const chat = document.getElementById('chat-area');
 const input = document.getElementById('input');
 const sendBtn = document.getElementById('send');
 const voiceSelect = document.getElementById('voiceSelect');
@@ -7,92 +7,99 @@ let voices = [];
 let selectedVoiceName = localStorage.getItem('halSelectedVoice') || '';
 
 function populateVoiceList() {
-  voices = speechSynthesis.getVoices();
-  voiceSelect.innerHTML = '';
-  voices.forEach((voice) => {
-    const option = document.createElement('option');
-    option.value = voice.name;
-    option.textContent = `${voice.name} (${voice.lang})`;
-    if (voice.name === selectedVoiceName) {
-      option.selected = true;
-    }
-    voiceSelect.appendChild(option);
-  });
+    voices = speechSynthesis.getVoices();
+    voiceSelect.innerHTML = '';
+    voices.forEach((voice) => {
+        const option = document.createElement('option');
+        option.value = voice.name;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        if (voice.name === selectedVoiceName) {
+            option.selected = true;
+        }
+        voiceSelect.appendChild(option);
+    });
 }
 
 populateVoiceList();
 speechSynthesis.onvoiceschanged = populateVoiceList;
 
 voiceSelect.addEventListener('change', () => {
-  selectedVoiceName = voiceSelect.value;
-  localStorage.setItem('halSelectedVoice', selectedVoiceName);
+    selectedVoiceName = voiceSelect.value;
+    localStorage.setItem('halSelectedVoice', selectedVoiceName);
 });
 
-function appendMessage(speaker, text) {
-  const msg = document.createElement('div');
-  msg.classList.add('message');
-  msg.classList.add(speaker === 'You' ? 'user' : 'bot');
-  msg.textContent = `${speaker}: ${text}`;
-  chat.appendChild(msg);
-  chat.scrollTop = chat.scrollHeight;
+function appendMessage(text, sender = 'bot') {
+    const msg = document.createElement('div');
+    msg.classList.add('msg-bubble');
+    msg.classList.add(sender === 'user' ? 'msg-client' : 'msg-system');
+    chat.appendChild(msg);
+    chat.scrollTop = chat.scrollHeight;
+
+    if (sender === 'bot') {
+        let index = 0;
+        const interval = setInterval(() => {
+            msg.textContent += text.charAt(index);
+            index++;
+            if (index >= text.length) clearInterval(interval);
+            chat.scrollTop = chat.scrollHeight;
+        }, 30); // Adjust typing speed here
+    } else {
+        msg.textContent = text;
+    }
 }
 
 function speak(text) {
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.95;
-  utterance.pitch = 0.9;
-  utterance.volume = 1;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 0.9;
+    utterance.volume = 1;
 
-  const chosenVoice = voices.find(v => v.name === selectedVoiceName);
-  if (chosenVoice) {
-    utterance.voice = chosenVoice;
-  }
-
-  speechSynthesis.speak(utterance);
-}
-
-async function sendMessage() {
-  const userMessage = input.value.trim();
-  if (!userMessage) return;
-
-  appendMessage('You', userMessage);
-  input.value = '';
-
-  try {
-    const res = await fetch('/api/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: userMessage, user_id: "browser-user" })
-    });
-    const data = await res.json();
-
-    if (data.response) {
-      appendMessage('HAL 9000', data.response);
-      speak(data.response);
-    } else {
-      appendMessage('HAL 9000', 'Error: No response from server');
+    const chosenVoice = voices.find(v => v.name === selectedVoiceName);
+    if (chosenVoice) {
+        utterance.voice = chosenVoice;
     }
-  } catch (e) {
-    appendMessage('HAL 9000', 'Error: Could not reach server');
-  }
+
+    speechSynthesis.speak(utterance);
 }
 
-sendBtn.addEventListener('click', sendMessage);
-input.addEventListener('keydown', e => {
-  if (e.key === 'Enter') sendMessage();
-});
+async function sendMessage(e) {
+    if (e) e.preventDefault();
+
+    const userMessage = input.value.trim();
+    if (!userMessage) return;
+
+    appendMessage(userMessage, 'user');
+    input.value = '';
+
+    try {
+        const res = await fetch('/api/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userMessage, user_id: "browser-user" })
+        });
+        const data = await res.json();
+
+        if (data.response) {
+            appendMessage(data.response, 'bot');
+            speak(data.response);
+        } else {
+            appendMessage('Error: No response from server', 'bot');
+        }
+    } catch (e) {
+        appendMessage('Error: Could not reach server', 'bot');
+    }
+}
 
 document.getElementById('resetChat').addEventListener('click', async () => {
-  try {
-    await fetch('/api/reset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: 'browser-user' })
-    });
-    conversation = [];
-    chat.innerHTML = '';
-    appendMessage('HAL 9000', 'New chat started. How can I help you, Ahad?');
-  } catch (err) {
-    appendMessage('HAL 9000', 'Error: Could not reset chat');
-  }
+    try {
+        await fetch('/api/reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: 'browser-user' })
+        });
+        chat.innerHTML = '';
+        appendMessage('New chat started. How can I help you, Ahad?', 'bot');
+    } catch (err) {
+        appendMessage('Error: Could not reset chat', 'bot');
+    }
 });
