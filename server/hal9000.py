@@ -4,7 +4,20 @@ import os
 import requests
 import traceback
 import time
+import logging
+from datetime import datetime
 from dotenv import load_dotenv
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('hal9000.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Create Flask app
 app = Flask(__name__)
@@ -43,6 +56,11 @@ def ask():
     data = request.get_json()
     user_id = data.get("user_id", "default")
     user_message = data.get("message", "")
+    
+    # Log the incoming request
+    logger.info(f"Chat request from user '{user_id}' (IP: {request.remote_addr})")
+    logger.info(f"User message: {user_message[:100]}{'...' if len(user_message) > 100 else ''}")
+    
     print("REQUEST RECEIVED from:", request.remote_addr)
 
     if not user_message:
