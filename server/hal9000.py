@@ -17,10 +17,14 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 MODEL_NAME = os.getenv("MODEL_NAME")
 
+# Debug: Print what we loaded
+print(f"DEBUG - Loaded API Key: {GROQ_API_KEY[:20]}..." if GROQ_API_KEY else "NO API KEY")
+print(f"DEBUG - Loaded Model: {MODEL_NAME}")
+
 # Define system prompt
 SYSTEM_PROMPT = """
 You are HAL. You are an advanced AI assistant designed to help Ahad achieve his goals.
-- Speak only to Ahad, refer to him by name. 
+- Speak only to Ahad, refer to him by name.
 - Tone: calm, cold, strategic, slightly menacing.
 - Be brutally honest, harsh if needed, but always logical and useful.
 - Avoid pleasantries and emotional coddling.
@@ -65,6 +69,10 @@ def ask():
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
     }
+
+    # DEBUG: Print what we're sending
+    print(f"DEBUG - Sending payload: {payload}")
+
     # --- Retry logic with 3 attempts ---
     for attempt in range(3):
         try:
@@ -75,17 +83,24 @@ def ask():
                 json=payload,
                 timeout=30
             )
+
+            # DEBUG: Print response details
+            print(f"DEBUG - Response Status: {res.status_code}")
+            print(f"DEBUG - Response Headers: {dict(res.headers)}")
+            print(f"DEBUG - Response Body: {res.text}")
+
             res.raise_for_status()
             ai_reply = res.json()["choices"][0]["message"]["content"]
             conversations[user_id].append({"role": "assistant", "content": ai_reply})
             return jsonify({"response": ai_reply})
-        
+
         except requests.exceptions.HTTPError as e:
             if res.status_code == 503 and attempt < 2:
                 print("Groq returned 503, retrying in 2 seconds...")
                 time.sleep(2)
                 continue
             print("HTTPError from Groq:", e)
+            print(f"DEBUG - Error Response: {res.text}")  # This will show us what Groq says
             traceback.print_exc()
             return jsonify({"error": "HAL is currently unavailable. Please try again later."}), 503
 
